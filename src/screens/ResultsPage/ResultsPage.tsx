@@ -4,13 +4,23 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 
 interface LocationState {
-  monthlyIncome: string;
-  taxFreeBonus: string;
-  taxFreeExpenses: string;
-  employees?: Array<{
-    grossSalary: string;
+  apiResponse?: {
+    grossSalary: number;
+    netOwnerSalary: number;
+    yearlyProfit: number;
+    totalTaxes: number;
+    netProfit: number;
+    profitMarging: number;
+  };
+  formData?: {
+    monthlyIncome: string;
     taxFreeBonus: string;
-  }>;
+    taxFreeExpenses: string;
+    employees?: Array<{
+      grossSalary: string;
+      taxFreeBonus: string;
+    }>;
+  };
 }
 
 export const ResultsPage = (): JSX.Element => {
@@ -20,25 +30,22 @@ export const ResultsPage = (): JSX.Element => {
 
   // If no data, redirect back to calculator
   React.useEffect(() => {
-    if (!state?.monthlyIncome) {
+    if (!state?.apiResponse) {
       navigate("/");
     }
   }, [state, navigate]);
 
-  if (!state?.monthlyIncome) {
+  if (!state?.apiResponse) {
     return <div>Loading...</div>;
   }
 
-  // Mock calculations - replace with your actual calculation logic
-  const monthlyIncome = parseFloat(state.monthlyIncome) || 0;
-  const taxFreeBonus = parseFloat(state.taxFreeBonus) || 0;
-  const taxFreeExpenses = parseFloat(state.taxFreeExpenses) || 0;
-  
-  const grossSalary = monthlyIncome * 0.7; // Example calculation
-  const netSalary = grossSalary * 0.85; // Example calculation
-  const yearlyProfit = monthlyIncome * 12; // Example calculation
-  const corporateTaxes = yearlyProfit * 0.3; // Example calculation
-  const yearlyNetProfit = yearlyProfit - corporateTaxes; // Example calculation
+  // Use real API data
+  const apiData = state.apiResponse;
+  const netSalary = apiData.netOwnerSalary;
+  const grossSalary = apiData.grossSalary;
+  const yearlyProfit = apiData.yearlyProfit;
+  const corporateTaxes = apiData.totalTaxes;
+  const yearlyNetProfit = apiData.netProfit;
 
   // Temporary placeholder icons - will be replaced with your custom icons
   const GrossSalaryIcon = () => (
@@ -84,6 +91,11 @@ export const ResultsPage = (): JSX.Element => {
     {
       title: "Yearly net profit",
       value: `MAD ${yearlyNetProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      icon: YearlyNetProfitIcon,
+    },
+    {
+      title: "Profit margin",
+      value: `${apiData.profitMarging.toFixed(2)}%`,
       icon: YearlyNetProfitIcon,
     },
   ];

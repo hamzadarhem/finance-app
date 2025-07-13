@@ -5,6 +5,7 @@ import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Switch } from "../../components/ui/switch";
+import { ApiService, CalculatorDto } from "../../lib/api";
 
 // Form field data for mapping
 const formFields = [
@@ -87,20 +88,41 @@ export const DivWrapper = (): JSX.Element => {
 
     setIsLoading(true);
     
-    // Simulate loading time
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Navigate to results page with form data
-    navigate("/results", { 
-      state: {
-        monthlyIncome: formData.monthlyIncome,
-        taxFreeBonus: formData.taxFreeBonus,
-        taxFreeExpenses: formData.taxFreeExpenses,
-        employees: hasEmployees ? formData.employees : undefined
-      }
-    });
-    
-    setIsLoading(false);
+    try {
+      // Prepare data for API
+      const apiData: CalculatorDto = {
+        companyMonthlyIncome: parseFloat(formData.monthlyIncome),
+        nonTaxableBonus: parseFloat(formData.taxFreeBonus),
+        taxDate: new Date().getFullYear(),
+        nonTaxableExpense: parseFloat(formData.taxFreeExpenses),
+        employees: hasEmployees ? formData.employees.map(emp => ({
+          grossSalary: parseFloat(emp.grossSalary),
+          nonTaxableBonus: parseFloat(emp.taxFreeBonus)
+        })) : []
+      };
+
+      // Call the API
+      const response = await ApiService.calculateBestMonthlySimulation(apiData);
+      
+      // Navigate to results page with API response
+      navigate("/results", { 
+        state: {
+          apiResponse: response.data,
+          formData: {
+            monthlyIncome: formData.monthlyIncome,
+            taxFreeBonus: formData.taxFreeBonus,
+            taxFreeExpenses: formData.taxFreeExpenses,
+            employees: hasEmployees ? formData.employees : undefined
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Calculation error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Error calculating results: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const renderInputField = (field: typeof formFields[0], index?: number) => (
@@ -183,7 +205,7 @@ export const DivWrapper = (): JSX.Element => {
                       {isLoading ? (
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          Calculating...
+                          Calculating with AI...
                         </div>
                       ) : (
                         "Calculate"
