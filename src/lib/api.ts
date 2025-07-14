@@ -26,23 +26,45 @@ export interface CalculatorResponse {
 
 const API_BASE_URL = 'http://localhost:3000/api';
 
+// Mock calculation function to simulate backend logic
+function mockCalculateBestMonthlySimulation(data: CalculatorDto): CalculatorResponse['data'] {
+  const { companyMonthlyIncome, nonTaxableBonus, nonTaxableExpense, employees } = data;
+  
+  // Simple mock calculation logic
+  const totalEmployeeSalaries = employees.reduce((sum, emp) => sum + emp.grossSalary, 0);
+  const totalEmployeeBonuses = employees.reduce((sum, emp) => sum + emp.nonTaxableBonus, 0);
+  
+  const grossSalary = companyMonthlyIncome * 0.7; // Mock: 70% of income as gross salary
+  const netOwnerSalary = grossSalary - (grossSalary * 0.25); // Mock: 25% tax rate
+  const yearlyProfit = (companyMonthlyIncome - totalEmployeeSalaries - nonTaxableExpense) * 12;
+  const totalTaxes = grossSalary * 0.25 * 12; // Mock annual taxes
+  const netProfit = yearlyProfit - totalTaxes;
+  const profitMarging = netProfit / (companyMonthlyIncome * 12) * 100;
+  
+  return {
+    grossSalary,
+    netOwnerSalary,
+    yearlyProfit,
+    totalTaxes,
+    netProfit,
+    profitMarging
+  };
+}
+
 export class ApiService {
   static async calculateBestMonthlySimulation(data: CalculatorDto): Promise<CalculatorResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/calculator/best-monthly-simulation`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'API request failed');
-      }
-
-      return await response.json();
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Use mock calculation instead of actual API call
+      const calculationResult = mockCalculateBestMonthlySimulation(data);
+      
+      return {
+        status: 200,
+        message: 'Calculation completed successfully',
+        data: calculationResult
+      };
     } catch (error) {
       console.error('API Error:', error);
       throw error;
